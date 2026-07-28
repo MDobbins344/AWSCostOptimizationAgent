@@ -1,8 +1,8 @@
 # Cloud Cost & Infrastructure Optimization Agent
 
-> **Status: in progress** — planning is complete and implementation is underway, beginning with the AWS and Terraform foundations the rest of the system builds on.
+> **Status: in progress** - planning is complete and implementation is underway, beginning with the AWS and Terraform foundations the rest of the system builds on.
 
-An **agentic** tool that connects to an AWS account, scans for cost waste, reasons about what it finds, and **proposes** — but never applies — Terraform fixes. It produces two outputs from the same underlying findings: a technical report for engineers and a plain-English savings one-pager for a business or customer audience.
+An **agentic** tool that connects to an AWS account, scans for cost waste, reasons about what it finds, and **proposes** but never applies Terraform fixes. It produces two outputs from the same underlying findings: a technical report for engineers and a plain-English savings one-pager for a business or customer audience.
 
 This is a project built to demonstrate the technical depth to design and build a real AWS agentic system, along with the communication range to translate that system's output into a business case.
 
@@ -15,41 +15,41 @@ Cloud cost waste (idle compute, unattached storage, fixed fleets that never scal
 - Scans EC2, EBS, RDS, and Auto Scaling Groups for waste patterns: idle or over-provisioned instances, unattached EBS volumes, over-sized databases, fixed fleets with no autoscaling.
 - Grounds every savings estimate in real AWS data such as Cost Explorer, Compute Optimizer, and the Pricing API, never in an LLM guess.
 - Runs an LLM tool-calling agent loop to prioritize findings by impact and confidence and explain them in plain English.
-- Generates Terraform remediations for each finding and runs `terraform plan` to produce a real, safe preview of the change — with no auto-apply.
+- Generates Terraform remediations for each finding and runs `terraform plan` to produce a real, safe preview of the change with no auto-apply.
 - Produces two audience-specific outputs from the same structured findings: a technical report and a customer savings one-pager.
 
 ## Architecture
 
 ```
                           ┌───────────────────────────────────────────────┐
-                          │            YOU (human-in-the-loop)             │
-                          │   review proposals · run `terraform apply`     │
+                          │            YOU (human-in-the-loop)            │
+                          │   review proposals · run `terraform apply`    │
                           └───────────────▲───────────────────────────────┘
                                           │ proposals + reports
-   ┌──────────────────┐   read-only   ┌───┴─────────────────────────────────────┐
-   │  AWS SANDBOX      │◄──────────────│           THE AGENT (your app)          │
+   ┌───────────────────┐   read-only   ┌───┴─────────────────────────────────────┐
+   │  AWS SANDBOX      │◄──────────────│        THE AGENT (the application)      │
    │  (Terraform-      │  boto3/       │                                         │
    │   provisioned,    │  Describe*    │  ┌────────────┐   ┌──────────────────┐  │
-   │   deliberately    │──────────────►│  │  SCANNER   │──►│  FINDINGS SCHEMA  │  │
-   │   wasteful)       │  metrics,     │  │ (boto3 +   │   │  (normalized      │  │
-   │                   │  cost data    │  │  Cost tools)│   │   objects)       │  │
+   │   deliberately    │──────────────►│  │  SCANNER   │──►│  FINDINGS SCHEMA │  │
+   │   wasteful)       │  metrics,     │  │ (boto3 +   │   │  (normalized     │  │
+   │                   │  cost data    │  │ Cost tools)│   │   objects)       │  │
    │  EC2 · EBS · RDS  │               │  └────────────┘   └────────┬─────────┘  │
    │  ASG · CloudWatch │               │                            ▼            │
-   └──────────────────┘               │  ┌──────────────────────────────────┐   │
+   └───────────────────┘               │  ┌──────────────────────────────────┐   │
                                        │  │  ORCHESTRATOR + LLM (agent loop) │   │
                                        │  │  reason · call tools · prioritize│   │
                                        │  └───────────────┬──────────────────┘   │
-                                       │                  ▼                       │
+                                       │                  ▼                      │
                                        │  ┌──────────────────────────────────┐   │
-                                       │  │  REMEDIATION GENERATOR (Terraform)│   │
+                                       │  │ REMEDIATION GENERATOR (Terraform)│   │
                                        │  └───────────────┬──────────────────┘   │
-                                       │                  ▼                       │
-                                       │  ┌───────────────┐   ┌───────────────┐   │
-                                       │  │ TECH REPORT   │   │ CUSTOMER      │   │
-                                       │  │ (engineers)   │   │ ONE-PAGER ($) │   │
-                                       │  └───────────────┘   └───────────────┘   │
-                                       │            served via DEMO UI (hosted)   │
-                                       └──────────────────────────────────────────┘
+                                       │                  ▼                      │
+                                       │  ┌───────────────┐   ┌───────────────┐  │
+                                       │  │ TECH REPORT   │   │ CUSTOMER      │  │
+                                       │  │ (engineers)   │   │ ONE-PAGER ($) │  │
+                                       │  └───────────────┘   └───────────────┘  │
+                                       │         served via DEMO UI (hosted)     │
+                                       └─────────────────────────────────────────┘
 ```
 
 Data flows left to right to down: the sandbox is read via read-only boto3 calls, raw resource state is normalized into a typed findings schema, the agent reasons over and prioritizes those findings, remediations are generated as Terraform, and two audience-specific outputs are produced and served through a hosted demo UI. Nothing flows back into the AWS account except through the human at the top of the diagram.
