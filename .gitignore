@@ -1,0 +1,32 @@
+# Secrets & credentials — NEVER commit these
+.env
+*.pem
+*.tfvars
+!*.example.tfvars
+
+# Personal / learning files — kept local, never pushed
+docs/LEARNING_LOG.md
+docs/02_Project_Timeline.md
+docs/DECISIONS.md
+docs/01_Concepts_and_Process_Guide.md
+*.local.md
+CLAUDE.local.md
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
